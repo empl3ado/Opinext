@@ -268,7 +268,6 @@ export default function ScrollExpandHero({
                   style={{ transform: `translateX(${textSlide}vw)` }}
                   animate={{ opacity: Math.max(0, 1 - scrollProgress * 2) }}
                 >
-                  La voz de la comunidad
                 </motion.p>
               </div>
 
@@ -278,7 +277,7 @@ export default function ScrollExpandHero({
                 animate={{ opacity: Math.max(0, 1 - scrollProgress * 3) }}
               >
                 <p className="text-text-primary/40 text-[10px] tracking-[0.25em] uppercase animate-fade-in-up-delay-3">
-                  Scroll para explorar
+                  Desliza hacia abajo para comenzar
                 </p>
                 <div className="flex justify-center mt-2 animate-bounce-down">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-primary/30">
