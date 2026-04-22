@@ -10,6 +10,7 @@ import { Heart, MessageCircle, Share2, Pencil, Trash2, MapPin } from 'lucide-rea
 import ReviewSection from '@/components/reviews/ReviewSection'
 import CommentSection from '@/components/comments/CommentSection'
 import EditListModal from '@/components/lists/EditListModal'
+import BuyButton from '@/components/shop/BuyButton'
 
 export default function ListDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
@@ -200,8 +201,21 @@ export default function ListDetailPage({ params }: { params: Promise<{ id: strin
                 <p className="text-xl font-serif text-text-dark">{list.view_count}</p>
                 <p className="text-[10px] font-bold tracking-widest text-text-dark/40 uppercase mt-1">Vistas</p>
               </div>
-              {/* Oculto likes temporalmente si no los tengo en la DB query (se sacan de target saves/votes) */}
             </div>
+
+            {list.is_commercial && (
+              <div className="mt-8 flex flex-col gap-4">
+                <div className="p-4 rounded-2xl bg-black/5 border border-black/5 text-center">
+                  <span className="text-xs font-bold text-text-dark/40 uppercase tracking-widest block mb-1">Precio</span>
+                  <span className="text-3xl font-serif text-text-dark">${list.price || 'Consultar'}</span>
+                </div>
+                <BuyButton 
+                  sellerId={list.user_id} 
+                  productTitle={list.title} 
+                  price={list.price} 
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

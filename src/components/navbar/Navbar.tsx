@@ -70,6 +70,12 @@ export default function Navbar({ mode, onModeChange, isTransparent = false }: Na
               Explorar
             </Link>
             <Link
+              href="/shop"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-text-dark text-bg-primary font-bold text-[10px] tracking-widest uppercase hover:bg-text-dark/90 transition-all shadow-sm"
+            >
+              Shop
+            </Link>
+            <Link
               href="/journal"
               className="text-text-primary/80 hover:text-text-primary transition-colors"
             >

@@ -89,6 +89,10 @@ export async function updateList(id: string, updates: {
   cover_image_url?: string | null
   video_url?: string | null
   is_collaborative?: boolean
+  is_commercial?: boolean
+  price?: number
+  commercial_type?: 'product' | 'service'
+  seller_status?: 'active' | 'inactive'
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

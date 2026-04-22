@@ -14,6 +14,9 @@ export interface CreateListParams {
   lng?: number
   isCollaborative: boolean
   tags: string[]
+  isCommercial?: boolean
+  price?: number
+  commercialType?: 'product' | 'service'
 }
 
 export interface CreateItemParams {
@@ -25,6 +28,9 @@ export interface CreateItemParams {
   lat?: number
   lng?: number
   tags: string[]
+  isCommercial?: boolean
+  price?: number
+  commercialType?: 'product' | 'service'
 }
 
 export async function fetchCategories() {
@@ -140,7 +146,10 @@ export async function createList(params: CreateListParams, formData: FormData) {
         lng: params.lng || null,
         cover_image_url: coverUrl,
         video_url: videoUrl,
-        is_collaborative: params.isCollaborative
+        is_collaborative: params.isCollaborative,
+        is_commercial: params.isCommercial || false,
+        price: params.price || null,
+        commercial_type: params.commercialType || null
       })
       .select('id')
       .single()
@@ -198,7 +207,10 @@ export async function createItem(params: CreateItemParams, formData: FormData) {
         lat: params.lat || null,
         lng: params.lng || null,
         image_url: imageUrl,
-        video_url: videoUrl
+        video_url: videoUrl,
+        is_commercial: params.isCommercial || false,
+        price: params.price || null,
+        commercial_type: params.commercialType || null
       })
       .select('id')
       .single()
