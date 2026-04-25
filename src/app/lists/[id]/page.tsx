@@ -3,9 +3,11 @@
 import { useRouter } from 'next/navigation'
 import Navbar from '@/components/navbar/Navbar'
 import ReelViewer from '@/components/reels/ReelViewer'
+import { use } from 'react'
 
-export default function ListPage({ params }: { params: { id: string } }) {
+export default function ListPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
+  const resolvedParams = use(params)
 
   return (
     <div className="h-[100dvh] w-full overflow-hidden bg-bg-secondary">
@@ -19,7 +21,7 @@ export default function ListPage({ params }: { params: { id: string } }) {
         isTransparent={false} 
       />
       <div className="w-full h-full">
-        <ReelViewer mode="listas" initialId={params.id} />
+        <ReelViewer mode="listas" initialId={resolvedParams.id} />
       </div>
     </div>
   )

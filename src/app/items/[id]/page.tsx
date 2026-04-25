@@ -5,10 +5,12 @@ import Navbar from '@/components/navbar/Navbar'
 import ReelViewer from '@/components/reels/ReelViewer'
 import DetailPanel from '@/components/detail/DetailPanel'
 import { useState } from 'react'
+import { use } from 'react'
 
-export default function ItemPage({ params }: { params: { id: string } }) {
+export default function ItemPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
-  const [activeId, setActiveId] = useState(params.id)
+  const resolvedParams = use(params)
+  const [activeId, setActiveId] = useState(resolvedParams.id)
 
   return (
     <div className="min-h-[100dvh] w-full bg-bg-secondary flex flex-col">
@@ -24,7 +26,7 @@ export default function ItemPage({ params }: { params: { id: string } }) {
         />
         <ReelViewer 
           mode="items" 
-          initialId={params.id} 
+          initialId={resolvedParams.id} 
           onActiveItemChange={(id) => setActiveId(id)}
         />
       </div>

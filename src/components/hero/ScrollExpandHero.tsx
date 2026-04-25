@@ -190,55 +190,57 @@ export default function ScrollExpandHero({
                 }}
               >
                 {/* Static preview (shown while animating) */}
-                <div 
-                  className="relative w-full h-full"
-                  style={{ opacity: fullyExpanded ? 0 : 1, transition: 'opacity 0.3s' }}
-                >
-                  <div className="absolute inset-0 bg-black" />
-                  <motion.div
-                    className="absolute inset-0 z-0"
-                    style={{ 
-                      scale: imageScale,
-                      opacity: bgOpacity
-                    }}
-                  >
-                    <img 
-                      src={preview?.image || ''} 
-                      alt={preview?.title || ''}
-                      className="w-full h-full object-cover opacity-80"
-                    />
-                  </motion.div>
-                  {/* Gradient overlay */}
-                  <div className="gradient-overlay absolute inset-0" />
+<div 
+  className="relative w-full h-full"
+  style={{ opacity: fullyExpanded ? 0 : 1, transition: 'opacity 0.3s' }}
+>
+  <div className="absolute inset-0 bg-black" />
+  <motion.div
+    className="absolute inset-0 z-0"
+    style={{ 
+      scale: imageScale,
+      opacity: bgOpacity
+    }}
+  >
+    {preview?.image ? (
+      <img 
+        src={preview?.image} 
+        alt={preview?.title || ''}
+        className="w-full h-full object-cover opacity-80"
+      />
+    ) : null}
+  </motion.div>
+  {/* Gradient overlay */}
+  <div className="gradient-overlay absolute inset-0" />
 
-                  {/* Dark overlay that lightens as we expand */}
-                  <motion.div
-                    className="absolute inset-0 bg-black/40"
-                    animate={{ opacity: Math.max(0, 0.5 - scrollProgress * 0.4) }}
-                    transition={{ duration: 0.05 }}
-                  />
+  {/* Dark overlay that lightens as we expand */}
+  <motion.div
+    className="absolute inset-0 bg-black/40"
+    animate={{ opacity: Math.max(0, 0.5 - scrollProgress * 0.4) }}
+    transition={{ duration: 0.05 }}
+  />
 
-                  {/* Preview info */}
-                  <motion.div
-                    className="absolute bottom-0 left-0 right-0 p-5 md:p-8"
-                    animate={{ opacity: Math.max(0, 1 - scrollProgress * 1.5) }}
-                  >
-                    <span className="text-xs font-bold uppercase tracking-wider text-white/60 bg-black/40 px-2 py-0.5 rounded backdrop-blur-sm">
-                      {preview?.tag || mode}
-                    </span>
-                    <h3 className="font-serif text-lg md:text-xl text-white leading-snug mt-1 line-clamp-2">
-                      {preview?.title || 'Cargando...'}
-                    </h3>
-                    <div className="flex items-center gap-2 mt-3">
-                      <div className="w-5 h-5 rounded-full bg-accent/20 flex items-center justify-center text-[10px] font-bold text-accent">
-                        {preview?.author?.[0]?.toUpperCase() || 'U'}
-                      </div>
-                      <span className="text-sm font-semibold tracking-wide text-white drop-shadow-md">
-                        @{preview?.author || 'usuario'}
-                      </span>
-                    </div>
-                  </motion.div>
-                </div>
+  {/* Preview info */}
+  <motion.div
+    className="absolute bottom-0 left-0 right-0 p-5 md:p-8"
+    animate={{ opacity: Math.max(0, 1 - scrollProgress * 1.5) }}
+  >
+    <span className="text-xs font-bold uppercase tracking-wider text-white/60 bg-black/40 px-2 py-0.5 rounded backdrop-blur-sm">
+      {preview?.tag || mode}
+    </span>
+    <h3 className="font-serif text-lg md:text-xl text-white leading-snug mt-1 line-clamp-2">
+      {preview?.title || 'Cargando...'}
+    </h3>
+    <div className="flex items-center gap-2 mt-3">
+      <div className="w-5 h-5 rounded-full bg-accent/20 flex items-center justify-center text-[10px] font-bold text-accent">
+        {preview?.author?.[0]?.toUpperCase() || 'U'}
+      </div>
+      <span className="text-sm font-semibold tracking-wide text-white drop-shadow-md">
+        @{preview?.author || 'usuario'}
+      </span>
+    </div>
+  </motion.div>
+</div>
 
                 {/* Expanded content */}
                 <div 
