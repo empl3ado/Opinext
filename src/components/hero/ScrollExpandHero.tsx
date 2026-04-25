@@ -7,29 +7,9 @@ import {
   ReactNode,
 } from 'react'
 import { motion } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 
-/* ------------------------------------------------------------------ */
-/*  Preview data – mirrors the first item from ReelViewer demo data   */
-/* ------------------------------------------------------------------ */
-const PREVIEW: Record<'listas' | 'items', {
-  image: string
-  title: string
-  author: string
-  tag: string
-}> = {
-  listas: {
-    image: 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=1200&q=80',
-    title: 'Mis rincones favoritos para leer en Buenos Aires',
-    author: 'lectora_nomade',
-    tag: 'Colección',
-  },
-  items: {
-    image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=1200&q=80',
-    title: 'Disfrutando de un Malbec Gran Guarda increíble',
-    author: 'julio_sperez',
-    tag: 'Review',
-  },
-}
+/* No static PREVIEW here anymore */
 
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
@@ -37,31 +17,35 @@ const PREVIEW: Record<'listas' | 'items', {
 interface ScrollExpandHeroProps {
   mode: 'listas' | 'items'
   onFullyExpanded?: (expanded: boolean) => void
-  /** Content rendered INSIDE the panel once fully expanded (ReelViewer) */
-  expandedContent?: ReactNode
   /** Content rendered BELOW the hero after expansion (DetailPanel etc.) */
   children?: ReactNode
+  preview: {
+    id: string
+    image: string
+    title: string
+    author: string
+    tag: string
+  } | null
 }
 
 export default function ScrollExpandHero({
   mode,
   onFullyExpanded,
-  expandedContent,
   children,
+  preview,
 }: ScrollExpandHeroProps) {
   const [scrollProgress, setScrollProgress] = useState(0)
-  const [showContent, setShowContent] = useState(false)
   const [fullyExpanded, setFullyExpanded] = useState(false)
   const [touchStartY, setTouchStartY] = useState(0)
   const [isMobile, setIsMobile] = useState(false)
+  const router = useRouter()
+
 
   const sectionRef = useRef<HTMLDivElement | null>(null)
-  const preview = PREVIEW[mode]
 
   /* Reset on mode change */
   useEffect(() => {
     setScrollProgress(0)
-    setShowContent(false)
     setFullyExpanded(false)
     onFullyExpanded?.(false)
   }, [mode]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -72,7 +56,6 @@ export default function ScrollExpandHero({
       if (fullyExpanded && e.deltaY < 0 && window.scrollY <= 5) {
         // Scroll up at top → collapse
         setFullyExpanded(false)
-        setShowContent(false)
         setScrollProgress(0.95)
         onFullyExpanded?.(false)
         e.preventDefault()
@@ -84,10 +67,10 @@ export default function ScrollExpandHero({
 
         if (next >= 1) {
           setFullyExpanded(true)
-          setShowContent(true)
           onFullyExpanded?.(true)
-        } else if (next < 0.75) {
-          setShowContent(false)
+          if (preview) {
+            router.push(`/${mode === 'listas' ? 'lists' : 'items'}/${preview.id}`)
+          }
         }
       }
     }
@@ -103,7 +86,6 @@ export default function ScrollExpandHero({
 
       if (fullyExpanded && deltaY < -20 && window.scrollY <= 5) {
         setFullyExpanded(false)
-        setShowContent(false)
         setScrollProgress(0.95)
         onFullyExpanded?.(false)
         e.preventDefault()
@@ -115,10 +97,10 @@ export default function ScrollExpandHero({
 
         if (next >= 1) {
           setFullyExpanded(true)
-          setShowContent(true)
           onFullyExpanded?.(true)
-        } else if (next < 0.75) {
-          setShowContent(false)
+          if (preview) {
+            router.push(`/${mode === 'listas' ? 'lists' : 'items'}/${preview.id}`)
+          }
         }
         setTouchStartY(touchY)
       }
@@ -163,6 +145,8 @@ export default function ScrollExpandHero({
   const radius = Math.max(0, 20 - scrollProgress * 20)
   const textSlide = scrollProgress * (isMobile ? 180 : 150)
   const shadowOpacity = Math.max(0, 0.3 - scrollProgress * 0.3)
+  const imageScale = 1 + scrollProgress * 0.1
+  const bgOpacity = fullyExpanded ? 0 : 1
 
   return (
     <div ref={sectionRef} className="overflow-x-hidden">
@@ -206,52 +190,71 @@ export default function ScrollExpandHero({
                 }}
               >
                 {/* Static preview (shown while animating) */}
-                {!fullyExpanded && (
-                  <div className="relative w-full h-full">
-                    <img
-                      src={preview.image}
-                      alt={preview.title}
-                      className="w-full h-full object-cover"
-                    />
-                    {/* Gradient overlay */}
-                    <div className="gradient-overlay absolute inset-0" />
-
-                    {/* Dark overlay that lightens as we expand */}
-                    <motion.div
-                      className="absolute inset-0 bg-black/40"
-                      animate={{ opacity: Math.max(0, 0.5 - scrollProgress * 0.4) }}
-                      transition={{ duration: 0.05 }}
-                    />
-
-                    {/* Preview info */}
-                    <motion.div
-                      className="absolute bottom-0 left-0 right-0 p-5 md:p-8"
-                      animate={{ opacity: Math.max(0, 1 - scrollProgress * 1.5) }}
-                    >
-                      <span className="text-[10px] font-bold tracking-widest text-text-primary/50 uppercase">
-                        {preview.tag}
-                      </span>
-                      <h3 className="font-serif text-lg md:text-xl text-text-primary leading-snug mt-1 line-clamp-2">
-                        {preview.title}
-                      </h3>
-                      <p className="text-text-primary/60 text-xs mt-2">
-                        @{preview.author}
-                      </p>
-                    </motion.div>
-                  </div>
-                )}
-
-                {/* Expanded content (ReelViewer) */}
-                {fullyExpanded && expandedContent && (
+                <div 
+                  className="relative w-full h-full"
+                  style={{ opacity: fullyExpanded ? 0 : 1, transition: 'opacity 0.3s' }}
+                >
+                  <div className="absolute inset-0 bg-black" />
                   <motion.div
-                    className="w-full h-full"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.4 }}
+                    className="absolute inset-0 z-0"
+                    style={{ 
+                      scale: imageScale,
+                      opacity: bgOpacity
+                    }}
                   >
-                    {expandedContent}
+                    <img 
+                      src={preview?.image || ''} 
+                      alt={preview?.title || ''}
+                      className="w-full h-full object-cover opacity-80"
+                    />
                   </motion.div>
-                )}
+                  {/* Gradient overlay */}
+                  <div className="gradient-overlay absolute inset-0" />
+
+                  {/* Dark overlay that lightens as we expand */}
+                  <motion.div
+                    className="absolute inset-0 bg-black/40"
+                    animate={{ opacity: Math.max(0, 0.5 - scrollProgress * 0.4) }}
+                    transition={{ duration: 0.05 }}
+                  />
+
+                  {/* Preview info */}
+                  <motion.div
+                    className="absolute bottom-0 left-0 right-0 p-5 md:p-8"
+                    animate={{ opacity: Math.max(0, 1 - scrollProgress * 1.5) }}
+                  >
+                    <span className="text-xs font-bold uppercase tracking-wider text-white/60 bg-black/40 px-2 py-0.5 rounded backdrop-blur-sm">
+                      {preview?.tag || mode}
+                    </span>
+                    <h3 className="font-serif text-lg md:text-xl text-white leading-snug mt-1 line-clamp-2">
+                      {preview?.title || 'Cargando...'}
+                    </h3>
+                    <div className="flex items-center gap-2 mt-3">
+                      <div className="w-5 h-5 rounded-full bg-accent/20 flex items-center justify-center text-[10px] font-bold text-accent">
+                        {preview?.author?.[0]?.toUpperCase() || 'U'}
+                      </div>
+                      <span className="text-sm font-semibold tracking-wide text-white drop-shadow-md">
+                        @{preview?.author || 'usuario'}
+                      </span>
+                    </div>
+                  </motion.div>
+                </div>
+
+                {/* Expanded content */}
+                <div 
+                  className="relative z-10 w-full"
+                  style={{ 
+                    pointerEvents: fullyExpanded ? 'auto' : 'none',
+                    opacity: fullyExpanded ? 1 : 0,
+                    transition: 'opacity 0.3s ease'
+                  }}
+                >
+                  {fullyExpanded && (
+                    <div className="flex h-screen items-center justify-center bg-black/40 backdrop-blur-sm text-white">
+                      <span className="animate-pulse font-serif text-2xl">Abriendo {mode}...</span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* --- Title text that slides away --- */}
@@ -291,7 +294,7 @@ export default function ScrollExpandHero({
             <motion.section
               className="flex flex-col w-full"
               initial={{ opacity: 0 }}
-              animate={{ opacity: showContent ? 1 : 0 }}
+              animate={{ opacity: fullyExpanded ? 1 : 0 }}
               transition={{ duration: 0.5 }}
             >
               {children}

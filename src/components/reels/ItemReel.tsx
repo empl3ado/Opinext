@@ -106,9 +106,9 @@ export default function ItemReel({ item, onOpenDetail }: ItemReelProps) {
         {/* Action bar */}
         <div className="flex items-end pb-28 pr-4 md:pr-8">
           <ActionBar
-            upvotes={item.upvotes}
-            downvotes={item.downvotes}
-            saves={item.saves}
+            upvotes={item.upvotes || 0}
+            downvotes={item.downvotes || 0}
+            saves={item.saves || 0}
           />
         </div>
       </div>

@@ -7,9 +7,10 @@ import { submitReview } from '@/app/actions/social'
 
 interface ReviewSectionProps {
   targetId: string
+  targetType: 'list' | 'list_item' | 'item'
 }
 
-export default function ReviewSection({ targetId }: ReviewSectionProps) {
+export default function ReviewSection({ targetId, targetType }: ReviewSectionProps) {
   const [rating, setRating] = useState(0)
   const [content, setContent] = useState('')
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -50,6 +51,7 @@ export default function ReviewSection({ targetId }: ReviewSectionProps) {
     try {
       const formData = new FormData()
       formData.append('targetId', targetId)
+      formData.append('targetType', targetType)
       formData.append('rating', rating.toString())
       formData.append('content', content)
       if (imageFile) {
@@ -96,7 +98,7 @@ export default function ReviewSection({ targetId }: ReviewSectionProps) {
         {/* Star Rating Input */}
         <div className="mb-4">
           <p className="text-xs font-semibold text-text-dark/50 uppercase tracking-widest mb-2">Tu puntaje</p>
-          <div className="text-text-dark [&_.text-text-primary]:!text-text-dark [&_.text-text-secondary]:!text-bg-primary">
+          <div>
             <StarRating
               rating={rating}
               interactive={true}

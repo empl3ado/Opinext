@@ -73,8 +73,8 @@ export default function CommentSection({ targetType, targetId }: CommentSectionP
 
         const c: Comment = {
           id: row.id,
-          username: row.profiles?.username || 'user',
-          avatar_url: row.profiles?.avatar_url,
+          username: Array.isArray(row.profiles) ? row.profiles[0]?.username : (row.profiles as any)?.username || 'user',
+          avatar_url: Array.isArray(row.profiles) ? row.profiles[0]?.avatar_url : (row.profiles as any)?.avatar_url,
           content: row.content,
           created_at: row.created_at,
           upvotes: up,

@@ -19,19 +19,19 @@
 }
 
 @theme inline {
-  --color-bg-primary: var(--bg-primary);
-  --color-bg-secondary: var(--bg-secondary);
-  --color-bg-page: var(--bg-page);
-  --color-bg-card: var(--bg-card);
-  --color-text-primary: var(--text-primary);
-  --color-text-secondary: var(--text-secondary);
-  --color-text-dark: var(--text-dark);
-  --color-text-muted: var(--text-muted);
-  --color-accent: var(--accent);
-  --color-accent-hover: var(--accent-hover);
-  --color-border: var(--border);
-  --color-border-dark: var(--border-dark);
-  --color-surface: var(--surface);
+  --color-bg-primary: oklch(0.296 0.048 46.5);
+  --color-bg-secondary: oklch(0.228 0.038 48.3);
+  --color-bg-page: oklch(0.955 0.012 72.0);
+  --color-bg-card: oklch(0 0 0 / 0.45);
+  --color-text-primary: oklch(0.973 0.007 75.0);
+  --color-text-secondary: oklch(0.752 0.056 65.0);
+  --color-text-dark: oklch(0.228 0.038 48.3);
+  --color-text-muted: oklch(0.634 0.029 60.0);
+  --color-accent: oklch(0.771 0.079 64.5);
+  --color-accent-hover: oklch(0.713 0.078 62.0);
+  --color-border: oklch(1 0 0 / 0.12);
+  --color-border-dark: oklch(0.228 0.038 48.3 / 0.15);
+  --color-surface: oklch(1 0 0 / 0.06);
   --font-serif: 'Playfair Display', Georgia, serif;
   --font-sans: 'Inter', system-ui, sans-serif;
 }

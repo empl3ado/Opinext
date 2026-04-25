@@ -126,11 +126,12 @@ export async function submitReview(formData: FormData) {
   if (!user) return { error: 'Debes iniciar sesión para dejar una reseña.' }
 
   const targetId = formData.get('targetId') as string
+  const targetType = formData.get('targetType') as string
   const rating = parseFloat(formData.get('rating') as string)
   const content = formData.get('content') as string
   const file = formData.get('image') as File | null
 
-  if (!targetId || !rating || isNaN(rating)) return { error: 'Faltan datos requeridos.' }
+  if (!targetId || !targetType || !rating || isNaN(rating)) return { error: 'Faltan datos requeridos.' }
 
   try {
     let imageUrl = null
@@ -156,7 +157,7 @@ export async function submitReview(formData: FormData) {
     // Insertar en la tabla ratings
     const { error } = await supabase.from('ratings').upsert({
       user_id: user.id,
-      target_type: 'item',
+      target_type: targetType,
       target_id: targetId,
       score: rating,
       content: content?.trim() || null,
@@ -170,5 +171,37 @@ export async function submitReview(formData: FormData) {
   } catch (error) {
     console.error('Error in submitReview:', error)
     return { error: 'Ocurrió un error al enviar tu reseña.' }
+  }
+}
+
+export async function submitReport(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Debes iniciar sesión para reportar.' }
+
+  const targetType = formData.get('targetType') as string
+  const targetId = formData.get('targetId') as string
+  const reason = formData.get('reason') as string
+  const description = formData.get('description') as string
+
+  if (!targetType || !targetId || !reason) {
+    return { error: 'Faltan campos obligatorios.' }
+  }
+
+  try {
+    const { error } = await supabase.from('reports').insert({
+      user_id: user.id,
+      target_type: targetType,
+      target_id: targetId,
+      reason,
+      description: description || null,
+      status: 'pending'
+    })
+
+    if (error) throw error
+    return { success: true }
+  } catch (err: any) {
+    console.error('Error in submitReport:', err)
+    return { error: err.message || 'Ocurrió un error al enviar el reporte.' }
   }
 }

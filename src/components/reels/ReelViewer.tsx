@@ -10,9 +10,10 @@ import { createClient } from '@/lib/supabase/client'
 interface ReelViewerProps {
   mode: 'listas' | 'items'
   onActiveItemChange?: (id: string, type: 'list' | 'item') => void
+  initialId?: string
 }
 
-export default function ReelViewer({ mode, onActiveItemChange }: ReelViewerProps) {
+export default function ReelViewer({ mode, onActiveItemChange, initialId }: ReelViewerProps) {
   const carouselRef = useRef<HTMLDivElement>(null)
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -21,31 +22,76 @@ export default function ReelViewer({ mode, onActiveItemChange }: ReelViewerProps
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
-      if (mode === 'listas') {
-        const { data: lists } = await supabase
-          .from('lists')
-          .select(`
-            *,
-            profiles:user_id ( username, avatar_url )
-          `)
-          .eq('is_published', true)
-          .order('created_at', { ascending: false })
-          .limit(10)
+      try {
+        let initialData = null
+        let otherData = []
         
-        setData(lists || [])
-      } else {
-        const { data: items } = await supabase
-          .from('items')
-          .select(`
-            *,
-            profiles:user_id ( username, avatar_url )
-          `)
-          .order('created_at', { ascending: false })
-          .limit(10)
+        if (mode === 'listas') {
+          // Fetch initial list if requested
+          if (initialId) {
+            const { data: initialList } = await supabase
+              .from('lists')
+              .select('*, profiles:user_id ( username, display_name, avatar_url, bio ), categories ( name )')
+              .eq('id', initialId)
+              .single()
+            if (initialList) initialData = initialList
+          }
           
-        setData(items || [])
+          // Fetch rest
+          let q = supabase
+            .from('lists')
+            .select('*, profiles:user_id ( username, display_name, avatar_url, bio ), categories ( name )')
+            .eq('is_published', true)
+            .order('created_at', { ascending: false })
+            .limit(10)
+            
+          if (initialId) q = q.neq('id', initialId)
+          
+          const { data: lists } = await q
+          otherData = lists || []
+          
+          const combined = [initialData, ...otherData].filter(Boolean)
+          const mappedLists = combined.map((list: any) => ({
+            ...list,
+            user: list.profiles || { username: 'Usuario' },
+            category_name: list.categories?.name || null,
+          }))
+          setData(mappedLists)
+        } else {
+          // Items
+          if (initialId) {
+            const { data: initialItem } = await supabase
+              .from('items')
+              .select('*, profiles:user_id ( username, avatar_url )')
+              .eq('id', initialId)
+              .single()
+            if (initialItem) initialData = initialItem
+          }
+
+          let q = supabase
+            .from('items')
+            .select('*, profiles:user_id ( username, avatar_url )')
+            .order('created_at', { ascending: false })
+            .limit(10)
+
+          if (initialId) q = q.neq('id', initialId)
+          
+          const { data: items } = await q
+          otherData = items || []
+          
+          const combined = [initialData, ...otherData].filter(Boolean)
+          const mappedItems = combined.map((item: any) => ({
+            ...item,
+            user: item.profiles || { username: 'Usuario' },
+            preview_comments: []
+          }))
+          setData(mappedItems)
+        }
+      } catch (e) {
+        console.error("Error loading reel data", e)
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
     
     fetchData()
@@ -71,7 +117,13 @@ export default function ReelViewer({ mode, onActiveItemChange }: ReelViewerProps
           if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
             const id = entry.target.getAttribute('data-id')
             if (id) {
-              onActiveItemChange(id, mode === 'listas' ? 'list' : 'item')
+              if (onActiveItemChange) onActiveItemChange(id, mode === 'listas' ? 'list' : 'item')
+              
+              // Shallow URL update
+              const path = mode === 'listas' ? `/lists/${id}` : `/items/${id}`
+              if (window.location.pathname !== path) {
+                window.history.replaceState(null, '', path)
+              }
             }
           }
         })
@@ -136,28 +188,30 @@ export default function ReelViewer({ mode, onActiveItemChange }: ReelViewerProps
             ))}
       </div>
 
-      {/* Navigation arrows */}
+      {/* Navigation arrows — for lists, position on the left half */}
       <button
         id="carousel-prev"
         onClick={() => scrollCarousel('left')}
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full glass hover:bg-white/15 transition-all group"
+        className={`absolute top-1/2 -translate-y-1/2 z-20 p-3 rounded-full glass hover:bg-white/15 transition-all group ${mode === 'listas' ? 'left-3' : 'left-4'}`}
       >
         <ChevronLeft size={24} className="text-text-primary/70 group-hover:text-text-primary transition-colors" />
       </button>
       <button
         id="carousel-next"
         onClick={() => scrollCarousel('right')}
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full glass hover:bg-white/15 transition-all group"
+        className={`absolute top-1/2 -translate-y-1/2 z-20 p-3 rounded-full glass hover:bg-white/15 transition-all group ${mode === 'listas' ? 'left-[calc(50%-56px)]' : 'right-4'}`}
       >
         <ChevronRight size={24} className="text-text-primary/70 group-hover:text-text-primary transition-colors" />
       </button>
 
-      {/* Scroll hint at bottom */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 animate-bounce pointer-events-none">
-        <p className="text-text-primary/40 text-[10px] tracking-widest uppercase bg-black/20 px-3 py-1 rounded-full backdrop-blur-md border border-white/5">
-          ↓ Desliza para detalles
-        </p>
-      </div>
+      {/* Scroll hint — only for items mode */}
+      {mode === 'items' && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 animate-bounce pointer-events-none">
+          <p className="text-text-primary/40 text-[10px] tracking-widest uppercase bg-black/20 px-3 py-1 rounded-full backdrop-blur-md border border-white/5">
+            ↓ Desliza para detalles
+          </p>
+        </div>
+      )}
     </div>
   )
 }
