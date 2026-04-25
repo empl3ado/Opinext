@@ -16,39 +16,6 @@ interface Comment {
   downvotes: number
   userVote: 'up' | 'down' | null
 }
-
-// ... [Mantengo el mock DEMO_COMMENTS aquí abajo por si el targetId es de demostración]
-const DEMO_COMMENTS: Comment[] = [
-  {
-    id: '1',
-    username: 'vinolover',
-    avatar_url: null,
-    content: '¡Qué envidia! Ese viñedo es espectacular. Estuve el año pasado y la experiencia fue inolvidable.',
-    created_at: new Date(Date.now() - 3600000).toISOString(),
-    upvotes: 12, downvotes: 1, userVote: null,
-    replies: [
-      {
-        id: '1-1',
-        username: 'julio_sperez',
-        avatar_url: null,
-        content: '¡Totalmente! La visita guiada vale cada peso.',
-        created_at: new Date(Date.now() - 1800000).toISOString(),
-        upvotes: 5, downvotes: 0, userVote: null,
-        replies: [],
-      },
-    ],
-  },
-  {
-    id: '2',
-    username: 'mendoza_guide',
-    avatar_url: null,
-    content: 'Excelente elección. ¿Probaste el maridaje con carnes rojas? Es la mejor combinación.',
-    created_at: new Date(Date.now() - 7200000).toISOString(),
-    upvotes: 8, downvotes: 0, userVote: null,
-    replies: [],
-  },
-]
-
 interface CommentSectionProps {
   targetType: string
   targetId: string
@@ -62,15 +29,7 @@ export default function CommentSection({ targetType, targetId }: CommentSectionP
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const isDemo = ['1', '2', '3'].includes(targetId)
-
   useEffect(() => {
-    if (isDemo) {
-      setComments(DEMO_COMMENTS)
-      setIsLoading(false)
-      return
-    }
-
     const fetchComments = async () => {
       setIsLoading(true)
       const supabase = createClient()
@@ -142,11 +101,11 @@ export default function CommentSection({ targetType, targetId }: CommentSectionP
     }
 
     fetchComments()
-  }, [targetId, targetType, isDemo])
+  }, [targetId, targetType])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newComment.trim() || isDemo) return
+    if (!newComment.trim()) return
     
     setIsSubmitting(true)
     setError(null)
@@ -197,18 +156,22 @@ export default function CommentSection({ targetType, targetId }: CommentSectionP
 
       {error && <p className="text-red-500 text-xs bg-red-50 p-2 rounded">{error}</p>}
 
-      {/* Comment list */}
-      <div className="space-y-4">
-        {comments.map((comment) => (
-          <CommentItem
-            key={comment.id}
-            comment={comment}
-            onReply={(id) => setReplyingTo(id)}
-            depth={0}
-            isDemo={isDemo}
-          />
-        ))}
-      </div>
+      {comments.length === 0 ? (
+        <div className="py-8 text-center text-text-dark/40 text-sm font-medium">
+          No hay comentarios para mostrar.
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {comments.map((comment) => (
+            <CommentItem
+              key={comment.id}
+              comment={comment}
+              onReply={(id) => setReplyingTo(id)}
+              depth={0}
+            />
+          ))}
+        </div>
+      )}
 
       {/* New comment input */}
       <form
@@ -236,13 +199,13 @@ export default function CommentSection({ targetType, targetId }: CommentSectionP
             type="text"
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
-            placeholder={isDemo ? "Los demos no aceptan comentarios reales" : "Escribe tu opinión..."}
-            disabled={isDemo || isSubmitting}
+            placeholder="Escribe tu opinión..."
+            disabled={isSubmitting}
             className="flex-1 px-4 py-2.5 rounded-xl bg-white border border-border-dark/20 text-sm text-text-dark placeholder:text-text-muted outline-none focus:border-accent/50 transition-colors disabled:opacity-50"
           />
           <button
             type="submit"
-            disabled={!newComment.trim() || isDemo || isSubmitting}
+            disabled={!newComment.trim() || isSubmitting}
             className="p-2.5 rounded-full bg-bg-primary text-text-primary disabled:opacity-30 hover:bg-bg-secondary transition-colors"
           >
             {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
@@ -256,24 +219,17 @@ export default function CommentSection({ targetType, targetId }: CommentSectionP
 function CommentItem({
   comment,
   onReply,
-  depth,
-  isDemo
+  depth
 }: {
   comment: Comment
   onReply: (id: string) => void
   depth: number
-  isDemo: boolean
 }) {
   const [vote, setVote] = useState<'up' | 'down' | null>(comment.userVote)
   const [upvotes, setUpvotes] = useState(comment.upvotes)
   const [downvotes, setDownvotes] = useState(comment.downvotes)
 
   const handleVote = async (type: 'up' | 'down') => {
-    if (isDemo) {
-      setVote(vote === type ? null : type)
-      return
-    }
-
     // Optimistic update
     const previousVote = vote
     setVote(vote === type ? null : type)
@@ -355,7 +311,6 @@ function CommentItem({
               comment={reply}
               onReply={onReply}
               depth={depth + 1}
-              isDemo={isDemo}
             />
           ))}
         </div>

@@ -156,3 +156,84 @@ export async function getCategoriesWithSubcategories() {
   
   return data || []
 }
+
+export async function getListItems(listId: string) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('list_items')
+    .select(`
+      *,
+      profiles ( username, display_name, avatar_url )
+    `)
+    .eq('list_id', listId)
+    .order('created_at', { ascending: false })
+
+  if (error || !data) {
+    console.error('Error fetching list items:', error)
+    return []
+  }
+
+  return data
+}
+
+export async function createListItem(params: {
+  listId: string
+  title: string
+  description?: string
+}, formData?: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autorizado' }
+
+  try {
+    let imageUrl = null
+    let videoUrl = null
+
+    if (formData) {
+      const file = formData.get('media') as File | null
+      if (file && file.size > 0) {
+        const isVideo = file.type.startsWith('video/')
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${user.id}/${Date.now()}.${fileExt}`
+
+        const { error: uploadError } = await supabase.storage
+          .from('item-images')
+          .upload(fileName, file)
+
+        if (uploadError) throw uploadError
+
+        const { data: publicUrlData } = supabase.storage
+          .from('item-images')
+          .getPublicUrl(fileName)
+
+        if (isVideo) {
+          videoUrl = publicUrlData.publicUrl
+        } else {
+          imageUrl = publicUrlData.publicUrl
+        }
+      }
+    }
+
+    const { data: listItem, error } = await supabase
+      .from('list_items')
+      .insert({
+        list_id: params.listId,
+        user_id: user.id,
+        title: params.title,
+        description: params.description || null,
+        image_url: imageUrl,
+        video_url: videoUrl,
+        position: 0
+      })
+      .select()
+      .single()
+
+    if (error) throw error
+
+    revalidatePath(`/lists/${params.listId}`)
+    return { success: true, item: listItem }
+  } catch (error: any) {
+    console.error('Error creating list item:', error)
+    return { error: error.message || 'Error al crear ítem/respuesta' }
+  }
+}

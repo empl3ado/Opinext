@@ -11,6 +11,7 @@ import ReviewSection from '@/components/reviews/ReviewSection'
 import CommentSection from '@/components/comments/CommentSection'
 import EditListModal from '@/components/lists/EditListModal'
 import BuyButton from '@/components/shop/BuyButton'
+import ListItemsSection from '@/components/lists/ListItemsSection'
 
 export default function ListDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
@@ -18,7 +19,7 @@ export default function ListDetailPage({ params }: { params: Promise<{ id: strin
   
   const [list, setList] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'info' | 'comments' | 'reviews'>('info')
+  const [activeTab, setActiveTab] = useState<'info' | 'items' | 'comments' | 'reviews'>('info')
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
@@ -135,6 +136,10 @@ export default function ListDetailPage({ params }: { params: Promise<{ id: strin
               Información
               {activeTab === 'info' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-text-dark" />}
             </button>
+            <button onClick={() => setActiveTab('items')} className={`pb-4 mr-8 text-sm font-semibold tracking-wider uppercase transition-colors relative ${activeTab === 'items' ? 'text-text-dark' : 'text-text-dark/40 hover:text-text-dark/60'}`}>
+              Items / Respuestas
+              {activeTab === 'items' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-text-dark" />}
+            </button>
             <button onClick={() => setActiveTab('reviews')} className={`pb-4 mr-8 text-sm font-semibold tracking-wider uppercase transition-colors relative ${activeTab === 'reviews' ? 'text-text-dark' : 'text-text-dark/40 hover:text-text-dark/60'}`}>
               Reseñas
               {activeTab === 'reviews' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-text-dark" />}
@@ -160,11 +165,16 @@ export default function ListDetailPage({ params }: { params: Promise<{ id: strin
               </div>
             )}
             
+            {activeTab === 'items' && (
+              <ListItemsSection listId={list.id} isCollaborative={list.is_collaborative} isOwner={isOwner} />
+            )}
+            
             {activeTab === 'reviews' && (
               <div>
                 <ReviewSection targetId={list.id} />
-                {/* Acá podrías mapear las reviews reales si las trajeras en getListDetails */}
-                <p className="mt-8 text-sm italic text-text-dark/50">Cargando reseñas verificadas...</p>
+                <div className="py-8 text-center text-text-dark/40 text-sm font-medium">
+                  No hay reseñas para mostrar.
+                </div>
               </div>
             )}
 

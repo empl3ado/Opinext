@@ -73,6 +73,17 @@ export async function sendMessage(conversationId: string, content: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'No autorizado' }
 
+  // Verificar estado del vendedor
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('seller_status')
+    .eq('id', user.id)
+    .single()
+
+  if (profile?.seller_status === 'debtor') {
+    return { error: 'Tu suscripción ha vencido. Regulariza tu pago para responder a tus clientes.' }
+  }
+
   const { error } = await supabase
     .from('messages')
     .insert({

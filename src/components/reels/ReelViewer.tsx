@@ -1,111 +1,11 @@
 'use client'
 
-import { useRef, useCallback, useEffect } from 'react'
+import { useRef, useCallback, useEffect, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import ListReel from './ListReel'
 import ItemReel from './ItemReel'
 
-// Demo data for initial render
-const DEMO_LISTS = [
-  {
-    id: '1',
-    title: 'Mis rincones favoritos para leer en Buenos Aires',
-    description: 'Una selección personal de lugares con buen café y silencio absoluto. Espacios donde el tiempo se detiene.',
-    cover_image_url: 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=1200&q=80',
-    user: { username: 'lectora_nomade', avatar_url: null },
-    upvotes: 1243,
-    downvotes: 32,
-    saves: 856,
-    featured_comment: {
-      username: 'buenos_libros',
-      content: '¡Increíble selección! Precisamente buscaba lugares así.',
-    },
-  },
-  {
-    id: '2',
-    title: 'Mejores bares de vino natural en Palermo',
-    description: 'Los bares que realmente valen la pena para disfrutar de vinos naturales sin etiquetas.',
-    cover_image_url: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=1200&q=80',
-    user: { username: 'vino_aventura', avatar_url: null },
-    upvotes: 2891,
-    downvotes: 45,
-    saves: 1204,
-    featured_comment: {
-      username: 'enofilo_ba',
-      content: 'El tercer bar de la lista es una joya escondida.',
-    },
-  },
-  {
-    id: '3',
-    title: 'Rutas de trekking imperdibles en Patagonia',
-    description: 'Senderos que te van a dejar sin aliento — literal y figurativamente.',
-    cover_image_url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&q=80',
-    user: { username: 'caminos_del_sur', avatar_url: null },
-    upvotes: 4521,
-    downvotes: 18,
-    saves: 3200,
-    featured_comment: {
-      username: 'trekking_arg',
-      content: 'Hice la ruta 2 el mes pasado. Totalmente de acuerdo.',
-    },
-  },
-]
-
-const DEMO_ITEMS = [
-  {
-    id: '1',
-    title: 'Disfrutando de un Malbec Gran Guarda increíble en mi viaje a Mendoza. La complejidad y el cuerpo son de otro planeta.',
-    content: '',
-    image_url: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=1200&q=80',
-    avg_rating: 4.8,
-    rating_count: 342,
-    upvotes: 2400,
-    downvotes: 23,
-    saves: 856,
-    user: { username: 'julio_sperez', avatar_url: null },
-    preview_comments: [
-      { username: 'vinolover', content: '¡Qué envidia! Ese viñedo es espectacular.' },
-      { username: 'mendoza_guide', content: 'Excelente elección. ¿Probaste el maridaje con carnes rojas?' },
-      { username: 'sommelier_ana', content: 'Notas a frutos negros y cuero, imagino. Una joya.' },
-    ],
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    title: 'Este café de especialidad en San Telmo me voló la cabeza. Tostado medio, notas a chocolate y naranja.',
-    content: '',
-    image_url: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1200&q=80',
-    avg_rating: 4.5,
-    rating_count: 189,
-    upvotes: 1800,
-    downvotes: 12,
-    saves: 623,
-    user: { username: 'cafe_porteño', avatar_url: null },
-    preview_comments: [
-      { username: 'barista_bsas', content: '¡Ese lugar es increíble! El cold brew también.' },
-      { username: 'coffee_nerd', content: '¿De qué origen es el grano? Suena a Etiopía.' },
-    ],
-    created_at: new Date(Date.now() - 3600000).toISOString(),
-  },
-  {
-    id: '3',
-    title: 'Atardecer desde el Cerro Campanario en Bariloche. No hay foto que le haga justicia.',
-    content: '',
-    image_url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80',
-    avg_rating: 4.9,
-    rating_count: 567,
-    upvotes: 5200,
-    downvotes: 8,
-    saves: 2100,
-    user: { username: 'viajera_sur', avatar_url: null },
-    preview_comments: [
-      { username: 'patagonia_fan', content: 'El mejor mirador de la zona, sin dudas.' },
-      { username: 'foto_natural', content: '¡Qué colores! ¿A qué hora fuiste para esa luz?' },
-      { username: 'turismo_arg', content: 'Agregado a mi lista de pendientes.' },
-    ],
-    created_at: new Date(Date.now() - 86400000).toISOString(),
-  },
-]
+import { createClient } from '@/lib/supabase/client'
 
 interface ReelViewerProps {
   mode: 'listas' | 'items'
@@ -114,7 +14,42 @@ interface ReelViewerProps {
 
 export default function ReelViewer({ mode, onActiveItemChange }: ReelViewerProps) {
   const carouselRef = useRef<HTMLDivElement>(null)
-  const data = mode === 'listas' ? DEMO_LISTS : DEMO_ITEMS
+  const [data, setData] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const supabase = createClient()
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true)
+      if (mode === 'listas') {
+        const { data: lists } = await supabase
+          .from('lists')
+          .select(`
+            *,
+            profiles:user_id ( username, avatar_url )
+          `)
+          .eq('is_published', true)
+          .order('created_at', { ascending: false })
+          .limit(10)
+        
+        setData(lists || [])
+      } else {
+        const { data: items } = await supabase
+          .from('items')
+          .select(`
+            *,
+            profiles:user_id ( username, avatar_url )
+          `)
+          .order('created_at', { ascending: false })
+          .limit(10)
+          
+        setData(items || [])
+      }
+      setLoading(false)
+    }
+    
+    fetchData()
+  }, [mode, supabase])
 
   const scrollCarousel = useCallback((direction: 'left' | 'right') => {
     if (!carouselRef.current) return
@@ -153,12 +88,33 @@ export default function ReelViewer({ mode, onActiveItemChange }: ReelViewerProps
     return () => observer.disconnect()
   }, [mode, data, onActiveItemChange])
 
-  // Reset active item when mode changes (defaults to first item)
+  // Reset active item when data is loaded
   useEffect(() => {
     if (data.length > 0 && onActiveItemChange) {
       onActiveItemChange(data[0].id, mode === 'listas' ? 'list' : 'item')
+    } else if (data.length === 0 && onActiveItemChange && !loading) {
+      onActiveItemChange('', mode === 'listas' ? 'list' : 'item')
     }
-  }, [mode, data, onActiveItemChange])
+  }, [data, mode, onActiveItemChange, loading])
+
+  if (loading) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-bg-secondary text-white">
+        <div className="animate-pulse">Cargando...</div>
+      </div>
+    )
+  }
+
+  if (data.length === 0) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-bg-secondary text-white">
+        <div className="text-center">
+          <p className="text-xl font-serif mb-2">No hay {mode} para mostrar</p>
+          <p className="text-sm text-white/50">No hay más por ver.</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="reel-slide relative bg-bg-secondary w-full">
@@ -168,12 +124,12 @@ export default function ReelViewer({ mode, onActiveItemChange }: ReelViewerProps
         className="carousel-container h-full w-full flex overflow-x-auto snap-x snap-mandatory hide-scrollbar"
       >
         {mode === 'listas'
-          ? DEMO_LISTS.map((list) => (
+          ? data.map((list) => (
               <div key={list.id} data-id={list.id} className="min-w-full w-full h-full snap-start shrink-0">
                 <ListReel list={list} onOpenDetail={() => {}} />
               </div>
             ))
-          : DEMO_ITEMS.map((item) => (
+          : data.map((item) => (
               <div key={item.id} data-id={item.id} className="min-w-full w-full h-full snap-start shrink-0">
                 <ItemReel item={item} onOpenDetail={() => {}} />
               </div>

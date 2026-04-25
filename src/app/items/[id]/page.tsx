@@ -114,7 +114,14 @@ export default function ItemDetailPage({ params }: { params: Promise<{ id: strin
               </div>
             )}
             
-            {activeTab === 'reviews' && <ReviewSection targetId={item.id} />}
+            {activeTab === 'reviews' && (
+              <div>
+                <ReviewSection targetId={item.id} />
+                <div className="py-8 text-center text-text-dark/40 text-sm font-medium">
+                  No hay reseñas para mostrar.
+                </div>
+              </div>
+            )}
             {activeTab === 'comments' && <CommentSection targetId={item.id} />}
           </div>
         </div>

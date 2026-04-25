@@ -115,7 +115,17 @@ async function processTags(supabase: any, tagNames: string[]) {
 export async function createList(params: CreateListParams, formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'Debes iniciar sesión para publicar.' }
+  if (!user) throw new Error('No autorizado')
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('seller_status')
+    .eq('id', user.id)
+    .single()
+
+  if (profile?.seller_status === 'debtor') {
+    throw new Error('No puedes crear nuevas publicaciones mientras tengas pagos pendientes.')
+  }
 
   try {
     let coverUrl = null
@@ -177,7 +187,17 @@ export async function createList(params: CreateListParams, formData: FormData) {
 export async function createItem(params: CreateItemParams, formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'Debes iniciar sesión para publicar.' }
+  if (!user) throw new Error('No autorizado')
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('seller_status')
+    .eq('id', user.id)
+    .single()
+
+  if (profile?.seller_status === 'debtor') {
+    throw new Error('No puedes crear nuevas publicaciones mientras tengas pagos pendientes.')
+  }
 
   try {
     let imageUrl = null

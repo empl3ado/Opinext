@@ -18,38 +18,8 @@ export default function SuggestionsSidebar({
   suggestions: SuggestionProfile[],
   isAuthenticated: boolean
 }) {
-
-  // Datos mockeados de trending circles como se ven en el diseño
-  const trendingCircles = [
-    { id: 1, name: 'Bordeaux En Primeur', members: '342 Members', active: '12 Active', icon: Wine },
-    { id: 2, name: 'Horology & Complications', members: '1.2k Members', active: '45 Active', icon: Watch },
-    { id: 3, name: 'First Editions', members: '890 Members', active: '8 Active', icon: BookOpen },
-  ]
-
   return (
     <div className="space-y-12">
-      
-      {/* Trending Circles */}
-      <div>
-        <h3 className="text-xl font-serif text-text-dark mb-6">Trending Circles</h3>
-        <div className="space-y-5">
-          {trendingCircles.map(circle => (
-            <div key={circle.id} className="flex items-center gap-4 group cursor-pointer">
-              <div className="w-10 h-10 rounded-xl bg-black/5 flex items-center justify-center text-text-dark shrink-0 group-hover:bg-black/10 transition-colors">
-                <circle.icon className="w-4 h-4" />
-              </div>
-              <div>
-                <h4 className="text-sm font-semibold text-text-dark leading-tight group-hover:underline">
-                  {circle.name}
-                </h4>
-                <p className="text-[10px] text-text-dark/60 tracking-wider">
-                  {circle.members} • {circle.active}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* Recommended Critics */}
       <div>
