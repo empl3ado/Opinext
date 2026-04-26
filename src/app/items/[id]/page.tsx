@@ -22,7 +22,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
               router.push('/?mode=listas')
             }
           }} 
-          isTransparent={false} 
+          isTransparent={true} 
         />
         <ReelViewer 
           mode="items" 

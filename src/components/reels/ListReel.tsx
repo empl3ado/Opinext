@@ -177,7 +177,7 @@ export default function ListReel({ list }: ListReelProps) {
   }
 
   return (
-    <div className="carousel-slide relative h-full flex flex-col md:flex-row pt-[72px] bg-[#0a0a0a] overflow-hidden">
+    <div className="carousel-slide relative h-full w-full flex flex-col md:flex-row bg-[#0a0a0a] overflow-hidden">
       {/* ═══ LEFT: Cover Image (22%) ═══ */}
       <div className="relative w-full md:w-[22%] h-[35vh] md:h-full shrink-0 overflow-hidden shadow-[20px_0_60px_rgba(0,0,0,0.8)] z-20 border-r border-white/5">
         {list.cover_image_url ? (
@@ -272,9 +272,9 @@ export default function ListReel({ list }: ListReelProps) {
 
       {/* ═══ CENTER: Items & Author Header (Auto-width) ═══ */}
       <div className="flex-1 h-full overflow-y-auto bg-[#130B07] custom-scrollbar relative z-10 border-r border-white/5">
-        <div className={`max-w-5xl mx-auto min-h-full pb-32 ${!list.is_collaborative ? 'px-10' : ''}`}>
+        <div className={`max-w-5xl mx-auto min-h-full pb-32 ${!list.is_collaborative ? 'px-4 md:px-10' : ''}`}>
         {/* ═══ HEADER: Author Section ═══ */}
-        <div className="bg-black/20 backdrop-blur-xl border-b border-white/10 p-10">
+        <div className="bg-black/20 backdrop-blur-xl border-b border-white/10 p-6 md:p-10">
           <div className="flex items-center gap-6 max-w-4xl mx-auto">
             <div className="relative group/avatar">
               <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-accent/30 shadow-2xl transition-transform group-hover/avatar:scale-105 duration-500">
@@ -311,7 +311,7 @@ export default function ListReel({ list }: ListReelProps) {
           </div>
         </div>
 
-        <div className="px-10 py-12 space-y-16 max-w-5xl mx-auto pb-40">
+        <div className="px-4 md:px-10 py-8 md:py-12 space-y-12 md:space-y-16 max-w-5xl mx-auto pb-40">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1">
               <span className="text-accent text-[10px] font-bold tracking-[0.2em] uppercase opacity-80">
@@ -465,7 +465,7 @@ function ItemCard({ item, onRefresh, listId, onExpandImage }: { item: any; onRef
     <div className="group bg-white/5 border border-white/10 rounded-[2rem] overflow-hidden transition-all duration-500 relative hover:bg-white/[0.08] hover:border-white/30 shadow-2xl mb-12">
       <div className="flex flex-col">
         {/* 1. Header: Creator Info */}
-        <div className="flex items-center gap-3 p-6 border-b border-white/5 bg-black/20">
+        <div className="flex items-center gap-3 p-4 md:p-6 border-b border-white/5 bg-black/20">
           <div className="w-10 h-10 rounded-full overflow-hidden bg-white/10 border border-white/10 shadow-lg">
             {p?.avatar_url ? <img src={p.avatar_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-xs text-white/40 font-bold">{(p?.username || 'u')[0].toUpperCase()}</div>}
           </div>
@@ -489,7 +489,7 @@ function ItemCard({ item, onRefresh, listId, onExpandImage }: { item: any; onRef
           </div>
         </div>
 
-        <div className="p-10 space-y-8">
+        <div className="p-6 md:p-8 space-y-6 md:space-y-8">
           {/* 2. Title & Score */}
           <div className="space-y-6">
             <h4 className="text-4xl font-serif font-black text-white leading-none uppercase tracking-tighter">{item.title}</h4>
@@ -524,7 +524,7 @@ function ItemCard({ item, onRefresh, listId, onExpandImage }: { item: any; onRef
 
           {/* 4. Media (Full Width Scaling) */}
           {hasMedia && (
-            <div className="w-full aspect-[16/9] md:aspect-[21/9] rounded-[2.5rem] overflow-hidden bg-black shadow-2xl cursor-zoom-in group/media relative border border-white/5"
+            <div className="w-full aspect-[16/9] md:aspect-[21/9] rounded-2xl md:rounded-[2.5rem] overflow-hidden bg-black shadow-2xl cursor-zoom-in group/media relative border border-white/5"
                  onClick={() => onExpandImage(item.video_url || item.image_url)}>
               {item.video_url
                 ? <video src={item.video_url} className="w-full h-full object-cover transition-transform duration-700 group-hover/media:scale-105" />

@@ -175,7 +175,7 @@ export default function ReelViewer({ mode, onActiveItemChange, initialId }: Reel
   }
 
   return (
-    <div className="reel-slide relative bg-bg-secondary w-full">
+    <div className="reel-slide relative bg-bg-secondary w-full h-full">
       {/* Horizontal carousel */}
       <div
         ref={carouselRef}

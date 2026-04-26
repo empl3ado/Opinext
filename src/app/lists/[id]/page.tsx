@@ -10,7 +10,7 @@ export default function ListPage({ params }: { params: Promise<{ id: string }> }
   const resolvedParams = use(params)
 
   return (
-    <div className="h-[100dvh] w-full overflow-hidden bg-bg-secondary">
+    <div className="h-[100dvh] w-full overflow-hidden bg-bg-secondary flex flex-col">
       <Navbar 
         mode="listas" 
         onModeChange={(newMode) => {
@@ -20,7 +20,8 @@ export default function ListPage({ params }: { params: Promise<{ id: string }> }
         }} 
         isTransparent={false} 
       />
-      <div className="w-full h-full">
+      <div className="h-14 w-full shrink-0" />
+      <div className="w-full flex-1 relative">
         <ReelViewer mode="listas" initialId={resolvedParams.id} />
       </div>
     </div>
