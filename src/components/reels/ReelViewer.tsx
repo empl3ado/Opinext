@@ -50,12 +50,15 @@ export default function ReelViewer({ mode, onActiveItemChange, initialId }: Reel
           const { data: lists } = await q
           otherData = lists || []
           
-          const combined = [initialData, ...otherData].filter(Boolean)
-          const mappedLists = combined.map((list: any) => ({
-            ...list,
-            user: list.profiles || { username: 'Usuario' },
-            category_name: list.categories?.name || null,
-          }))
+          const combined = initialData ? [initialData, ...otherData] : otherData
+          const mappedLists = combined.map((list: any) => {
+            const p = Array.isArray(list.profiles) ? list.profiles[0] : list.profiles
+            return {
+              ...list,
+              user: p || { username: 'Usuario' },
+              category_name: list.categories?.name || null,
+            }
+          })
           setData(mappedLists)
         } else {
           // Items
@@ -79,12 +82,15 @@ export default function ReelViewer({ mode, onActiveItemChange, initialId }: Reel
           const { data: items } = await q
           otherData = items || []
           
-          const combined = [initialData, ...otherData].filter(Boolean)
-          const mappedItems = combined.map((item: any) => ({
-            ...item,
-            user: item.profiles || { username: 'Usuario' },
-            preview_comments: []
-          }))
+          const combined = initialData ? [initialData, ...otherData] : otherData
+          const mappedItems = combined.map((item: any) => {
+            const p = Array.isArray(item.profiles) ? item.profiles[0] : item.profiles
+            return {
+              ...item,
+              user: p || { username: 'Usuario' },
+              preview_comments: []
+            }
+          })
           setData(mappedItems)
         }
       } catch (e) {

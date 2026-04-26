@@ -84,13 +84,13 @@ export async function toggleSave(targetType: string, targetId: string) {
 }
 
 // Add Comment
-export async function addComment(targetType: string, targetId: string, content: string, parentId?: string) {
+export async function addComment(targetType: string, targetId: string, content: string, parentId?: string, formData?: FormData) {
   const supabase = await createClient()
   
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Debes iniciar sesión para comentar.' }
 
-  if (!content || content.trim() === '') return { error: 'El comentario no puede estar vacío.' }
+  if (!content && !formData) return { error: 'El comentario no puede estar vacío.' }
 
   try {
     let depth = 0
@@ -99,13 +99,40 @@ export async function addComment(targetType: string, targetId: string, content: 
       if (parent) depth = parent.depth + 1
     }
 
+    let imageUrl = null
+    let videoUrl = null
+
+    if (formData) {
+      const file = formData.get('media') as File | null
+      if (file && file.size > 0) {
+        const isVideo = file.type.startsWith('video/')
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${user.id}/comment_${Date.now()}.${fileExt}`
+
+        const { error: uploadError } = await supabase.storage
+          .from('item-images') // Reusing the same bucket for now
+          .upload(fileName, file)
+
+        if (uploadError) throw uploadError
+
+        const { data: publicUrlData } = supabase.storage
+          .from('item-images')
+          .getPublicUrl(fileName)
+
+        if (isVideo) videoUrl = publicUrlData.publicUrl
+        else imageUrl = publicUrlData.publicUrl
+      }
+    }
+
     const { data, error } = await supabase.from('comments').insert({
       user_id: user.id,
       target_type: targetType,
       target_id: targetId,
-      content: content.trim(),
+      content: content?.trim() || '',
       parent_comment_id: parentId || null,
-      depth
+      depth,
+      image_url: imageUrl,
+      video_url: videoUrl
     }).select().single()
 
     if (error) throw error
@@ -116,6 +143,58 @@ export async function addComment(targetType: string, targetId: string, content: 
     console.error('Error in addComment:', error)
     return { error: 'Ocurrió un error al publicar tu comentario.' }
   }
+}
+
+export async function updateComment(id: string, content: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autorizado' }
+
+  if (!content || content.trim() === '') return { error: 'El comentario no puede estar vacío.' }
+
+  const [{ data: comment }, { data: profile }] = await Promise.all([
+    supabase.from('comments').select('user_id').eq('id', id).single(),
+    supabase.from('profiles').select('role').eq('id', user.id).single()
+  ])
+
+  if (!comment) return { error: 'Comentario no encontrado' }
+
+  const isOwner = comment.user_id === user.id
+  const isAdminOrMod = profile?.role === 'admin' || profile?.role === 'mod'
+
+  if (!isOwner && !isAdminOrMod) return { error: 'No tienes permisos para editar' }
+
+  const { error } = await supabase
+    .from('comments')
+    .update({ content: content.trim(), updated_at: new Date().toISOString() })
+    .eq('id', id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/')
+  return { success: true }
+}
+
+export async function deleteComment(id: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autorizado' }
+
+  const [{ data: comment }, { data: profile }] = await Promise.all([
+    supabase.from('comments').select('user_id').eq('id', id).single(),
+    supabase.from('profiles').select('role').eq('id', user.id).single()
+  ])
+
+  if (!comment) return { error: 'Comentario no encontrado' }
+
+  const isOwner = comment.user_id === user.id
+  const isAdminOrMod = profile?.role === 'admin' || profile?.role === 'mod'
+
+  if (!isOwner && !isAdminOrMod) return { error: 'No tienes permisos para eliminar' }
+
+  const { error } = await supabase.from('comments').delete().eq('id', id)
+  if (error) return { error: error.message }
+  revalidatePath('/')
+  return { success: true }
 }
 
 // Submit Review

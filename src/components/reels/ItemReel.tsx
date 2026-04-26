@@ -1,46 +1,126 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import ActionBar from './ActionBar'
 import StarRating from '@/components/ui/StarRating'
-import { MessageSquare } from 'lucide-react'
+import { MessageSquare, Loader2, Send } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/components/auth/AuthProvider'
+import { toggleVote, toggleSave, submitReview } from '@/app/actions/social'
+import CommentSection from '@/components/comments/CommentSection'
 
 interface ItemReelProps {
-  item: {
-    id: string
-    title: string
-    content: string
-    image_url: string | null
-    avg_rating: number
-    rating_count: number
-    upvotes: number
-    downvotes: number
-    saves: number
-    user: {
-      username: string
-      avatar_url: string | null
-    }
-    preview_comments: Array<{
-      username: string
-      content: string
-    }>
-    created_at: string
-  }
+  item: any
   onOpenDetail: () => void
 }
 
 export default function ItemReel({ item, onOpenDetail }: ItemReelProps) {
+  const { user } = useAuth()
+  const [vote, setVote] = useState<'up' | 'down' | null>(null)
+  const [upvotes, setUpvotes] = useState(item.upvotes || 0)
+  const [downvotes, setDownvotes] = useState(item.downvotes || 0)
+  const [isSaved, setIsSaved] = useState(false)
+  const [savesCount, setSavesCount] = useState(item.saves || 0)
+  const [rating, setRating] = useState(item.avg_rating || 0)
+  const [ratingBusy, setRatingBusy] = useState(false)
+  const [showComments, setShowComments] = useState(false)
+
   const timeAgo = getTimeAgo(item.created_at)
+
+  useEffect(() => {
+    const fetchState = async () => {
+      if (!user) return
+      const supabase = createClient()
+      
+      // Vote
+      const { data: vData } = await supabase.from('votes')
+        .select('vote_type')
+        .eq('user_id', user.id)
+        .eq('target_type', 'item')
+        .eq('target_id', item.id)
+        .single()
+      if (vData) setVote(vData.vote_type)
+
+      // Save
+      const { data: sData } = await supabase.from('saves')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('target_type', 'item')
+        .eq('target_id', item.id)
+        .single()
+      setIsSaved(!!sData)
+    }
+
+    // Fetch total saves count (since item.saves might be outdated)
+    const fetchSavesCount = async () => {
+      const supabase = createClient()
+      const { count } = await supabase.from('saves')
+        .select('*', { count: 'exact', head: true })
+        .eq('target_type', 'item')
+        .eq('target_id', item.id)
+      setSavesCount(count || 0)
+    }
+
+    fetchState()
+    fetchSavesCount()
+  }, [item.id, user])
+
+  const handleLike = async () => {
+    if (!user) return
+    const prev = vote
+    setVote(vote === 'up' ? null : 'up')
+    if (vote === 'up') setUpvotes((u: number) => u - 1)
+    else {
+      setUpvotes((u: number) => u + 1)
+      if (prev === 'down') setDownvotes((d: number) => d - 1)
+    }
+    const res = await toggleVote('item', item.id, 'up')
+    if (res?.error) setVote(prev)
+  }
+
+  const handleDislike = async () => {
+    if (!user) return
+    const prev = vote
+    setVote(vote === 'down' ? null : 'down')
+    if (vote === 'down') setDownvotes((d: number) => d - 1)
+    else {
+      setDownvotes((d: number) => d + 1)
+      if (prev === 'up') setUpvotes((u: number) => u - 1)
+    }
+    const res = await toggleVote('item', item.id, 'down')
+    if (res?.error) setVote(prev)
+  }
+
+  const handleSave = async () => {
+    if (!user) return
+    const prev = isSaved
+    setIsSaved(!isSaved)
+    setSavesCount((s: number) => isSaved ? s - 1 : s + 1)
+    const res = await toggleSave('item', item.id)
+    if (res?.error) {
+      setIsSaved(prev)
+      setSavesCount((s: number) => prev ? s + 1 : s - 1)
+    }
+  }
+
+  const handleRate = async (score: number) => {
+    if (!user || score === 0) return
+    setRating(score)
+    setRatingBusy(true)
+    const fd = new FormData()
+    fd.append('targetId', item.id)
+    fd.append('targetType', 'item')
+    fd.append('rating', score.toString())
+    await submitReview(fd)
+    setRatingBusy(false)
+  }
 
   return (
     <div className="carousel-slide relative h-full">
       {/* Background image */}
       <div className="absolute inset-0">
         {item.image_url ? (
-          <img
-            src={item.image_url}
-            alt={item.title}
-            className="w-full h-full object-cover"
-          />
+          <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-bg-primary via-bg-secondary to-bg-primary" />
         )}
@@ -57,7 +137,7 @@ export default function ItemReel({ item, onOpenDetail }: ItemReelProps) {
                 <img src={item.user.avatar_url} alt={item.user.username} className="w-full h-full object-cover" />
               ) : (
                 <span className="text-text-primary font-semibold">
-                  {item.user.username[0]?.toUpperCase()}
+                  {item.user.username?.[0]?.toUpperCase() || 'U'}
                 </span>
               )}
             </div>
@@ -75,40 +155,46 @@ export default function ItemReel({ item, onOpenDetail }: ItemReelProps) {
           </h2>
 
           {/* Star rating */}
-          <div className="mb-5">
+          <div className="flex items-center gap-3 mb-5">
             <StarRating
-              rating={item.avg_rating}
-              count={item.rating_count}
+              rating={rating}
               size={20}
+              interactive={!!user}
+              onRate={handleRate}
             />
+            {ratingBusy && <Loader2 size={14} className="animate-spin text-white/30" />}
           </div>
 
-          {/* Preview comments */}
-          <div className="glass-dark rounded-xl px-4 py-3 max-w-lg space-y-2">
-            {item.preview_comments.map((comment, i) => (
-              <p key={i} className="text-xs text-text-primary/70">
-                <span className="text-text-secondary font-medium">@{comment.username}</span>
-                {' '}{comment.content}
-              </p>
-            ))}
-
-            {/* Opinar button */}
+          {/* Opinar button / Comments Toggle */}
+          <div className="max-w-lg">
             <button
-              onClick={onOpenDetail}
-              className="w-full mt-2 py-2.5 rounded-lg bg-white/8 hover:bg-white/12 transition-colors flex items-center justify-center gap-2 text-text-primary text-sm font-medium tracking-wide"
+              onClick={() => setShowComments(!showComments)}
+              className="w-full py-2.5 rounded-lg glass hover:bg-white/12 transition-colors flex items-center justify-center gap-2 text-text-primary text-sm font-medium tracking-wide border border-white/10"
             >
               <MessageSquare size={16} />
-              OPINAR
+              {showComments ? 'OCULTAR COMENTARIOS' : 'VER OPINIONES'}
             </button>
+            
+            {showComments && (
+              <div className="mt-4 p-4 glass rounded-xl max-h-[40vh] overflow-y-auto custom-scrollbar">
+                <CommentSection targetType="item" targetId={item.id} />
+              </div>
+            )}
           </div>
         </div>
 
         {/* Action bar */}
         <div className="flex items-end pb-28 pr-4 md:pr-8">
           <ActionBar
-            upvotes={item.upvotes || 0}
-            downvotes={item.downvotes || 0}
-            saves={item.saves || 0}
+            upvotes={upvotes}
+            downvotes={downvotes}
+            saves={savesCount}
+            isLiked={vote === 'up'}
+            isDisliked={vote === 'down'}
+            isSaved={isSaved}
+            onLike={handleLike}
+            onDislike={handleDislike}
+            onSave={handleSave}
           />
         </div>
       </div>
@@ -117,6 +203,7 @@ export default function ItemReel({ item, onOpenDetail }: ItemReelProps) {
 }
 
 function getTimeAgo(dateStr: string): string {
+  if (!dateStr) return 'Reciente'
   const now = new Date()
   const date = new Date(dateStr)
   const diffMs = now.getTime() - date.getTime()

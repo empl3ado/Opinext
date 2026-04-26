@@ -237,3 +237,58 @@ export async function createListItem(params: {
     return { error: error.message || 'Error al crear ítem/respuesta' }
   }
 }
+
+export async function updateListItem(id: string, updates: { title?: string, description?: string }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autorizado' }
+
+  // Check role and ownership
+  const [{ data: item }, { data: profile }] = await Promise.all([
+    supabase.from('list_items').select('user_id, list_id').eq('id', id).single(),
+    supabase.from('profiles').select('role').eq('id', user.id).single()
+  ])
+
+  if (!item) return { error: 'Ítem no encontrado' }
+
+  const isOwner = item.user_id === user.id
+  const isAdminOrMod = profile?.role === 'admin' || profile?.role === 'mod'
+
+  if (!isOwner && !isAdminOrMod) {
+    return { error: 'No tienes permisos para editar' }
+  }
+
+  const { error } = await supabase
+    .from('list_items')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', id)
+
+  if (error) return { error: error.message }
+  revalidatePath(`/lists/${item.list_id}`)
+  return { success: true }
+}
+
+export async function deleteListItem(id: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autorizado' }
+
+  const [{ data: item }, { data: profile }] = await Promise.all([
+    supabase.from('list_items').select('user_id, list_id').eq('id', id).single(),
+    supabase.from('profiles').select('role').eq('id', user.id).single()
+  ])
+
+  if (!item) return { error: 'Ítem no encontrado' }
+
+  const isOwner = item.user_id === user.id
+  const isAdminOrMod = profile?.role === 'admin' || profile?.role === 'mod'
+
+  if (!isOwner && !isAdminOrMod) {
+    return { error: 'No tienes permisos para eliminar' }
+  }
+
+  const { error } = await supabase.from('list_items').delete().eq('id', id)
+  if (error) return { error: error.message }
+  revalidatePath(`/lists/${item.list_id}`)
+  return { success: true }
+}
